@@ -8,6 +8,7 @@ import (
 
 	"monitor/network"
 	"monitor/process"
+	"monitor/send"
 
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
@@ -16,16 +17,18 @@ import (
 )
 
 type Cmd struct {
-	root    bool
-	process bool
-	network bool
+	root      bool
+	process   bool
+	network   bool
+	send_file bool
 }
 
 func NewCmd() *Cmd {
 	return &Cmd{
-		root:    true,
-		process: true,
-		network: true}
+		root:      true,
+		process:   true,
+		network:   true,
+		send_file: true}
 }
 func (cmd *Cmd) Run() {
 	rootCmd := &cobra.Command{
@@ -54,6 +57,16 @@ func (cmd *Cmd) Run() {
 		}
 		rootCmd.AddCommand(processCmd)
 	}
+	if cmd.send_file {
+		sftpCmd := &cobra.Command{
+			Use:   "sftp",
+			Short: "send file to sftp",
+			Long:  "A command-line tool to send files to sftp",
+			Run:   cmd.sendCmd,
+		}
+		rootCmd.AddCommand(sftpCmd)
+
+	}
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -68,6 +81,10 @@ func (_cmd *Cmd) networkCmd(cmd *cobra.Command, args []string) {
 	networkMonitor := network.NewNetworkMonitor()
 	networkMonitor.Start()
 	networkMonitor.Wait()
+}
+func (_cmd *Cmd) sendCmd(cmd *cobra.Command, args []string) {
+	sftp_send := send.NewSftp("localhost", 22, "admin", "admin")
+	sftp_send.Start()
 }
 
 func (_cmd *Cmd) rootCmdFunc(cmd *cobra.Command, args []string) {
